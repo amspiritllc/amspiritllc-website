@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>AMSpirit LLC | Reliable E-Commerce Solutions</title>
+  <meta
+    name="description"
+    content="AMSpirit LLC is a Texas-based e-commerce retailer offering consumer electronics, office products, computer accessories, gaming products, and home goods."
+  >
+
+  <style>
+    :root {
+      --navy: #12243a;
+      --blue: #2563a7;
+      --light-blue: #eaf3fb;
+      --gold: #d7a84a;
+      --text: #243142;
+      --muted: #5f6f82;
+      --white: #ffffff;
+      --light: #f6f8fb;
+      --border: #dfe6ee;
+      --shadow: 0 14px 35px rgba(18, 36, 58, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.65;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--navy);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.96rem;
+      font-weight: 700;
+    }
+
+    .nav-links a:hover {
+      color: var(--blue);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      color: var(--white);
+      background:
+        linear-gradient(115deg, rgba(12, 30, 51, 0.98), rgba(24, 71, 113, 0.9)),
+        linear-gradient(135deg, #132b46, #27689e);
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .hero::before {
+      width: 560px;
+      height: 560px;
+      right: -170px;
+      top: -240px;
+      border: 70px solid rgba(255, 255, 255, 0.055);
+      transform: rotate(20deg);
+    }
+
+    .hero::after {
+      width: 470px;
+      height: 240px;
+      right: 6%;
+      bottom: -90px;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.06) 0 48px,
+          transparent 48px 64px
+        );
+      transform: skewX(-12deg);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      min-height: 600px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      align-items: center;
+      gap: 70px;
+      padding: 90px 0;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #d6eaff;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+
+    h1 {
+      max-width: 720px;
+      margin: 0;
+      font-size: clamp(3rem, 7vw, 5.4rem);
+      line-height: 1.03;
+      letter-spacing: -0.045em;
+    }
+
+    .hero h2 {
+      margin: 22px 0 18px;
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      font-weight: 500;
+      color: #d7eafb;
+    }
+
+    .hero p {
+      max-width: 700px;
+      margin: 0;
+      font-size: 1.08rem;
+      color: #e7f0f8;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 13px 22px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 800;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      opacity: 0.94;
+    }
+
+    .button-primary {
+      color: var(--navy);
+      background: var(--white);
+    }
+
+    .button-secondary {
+      color: var(--white);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+    }
+
+    .warehouse-art {
+      position: relative;
+      min-height: 360px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .warehouse-art .shelf {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 5px;
+    }
+
+    .shelf.one { top: 30%; }
+    .shelf.two { top: 58%; }
+    .shelf.three { top: 84%; }
+
+    .warehouse-art .post {
+      position: absolute;
+      top: 10%;
+      bottom: 8%;
+      width: 12px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+    }
+
+    .post.one { left: 12%; }
+    .post.two { left: 49%; }
+    .post.three { right: 12%; }
+
+    .box {
+      position: absolute;
+      height: 62px;
+      border-radius: 5px;
+      background: linear-gradient(145deg, #e4b76a, #b9822f);
+      border: 2px solid rgba(63, 39, 8, 0.28);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.13);
+    }
+
+    .box::after {
+      content: "";
+      position: absolute;
+      width: 2px;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      background: rgba(92, 55, 13, 0.3);
+    }
+
+    .box.a { width: 98px; left: 17%; top: 13%; }
+    .box.b { width: 118px; right: 17%; top: 12%; }
+    .box.c { width: 124px; left: 17%; top: 40%; }
+    .box.d { width: 90px; right: 20%; top: 40%; }
+    .box.e { width: 105px; left: 20%; top: 66%; }
+    .box.f { width: 128px; right: 15%; top: 66%; }
+
+    section {
+      padding: 90px 0;
+    }
+
+    section:nth-of-type(even) {
+      background: var(--light);
+    }
+
+    .section-heading {
+      max-width: 760px;
+      margin-bottom: 42px;
+    }
+
+    .section-label {
+      margin-bottom: 9px;
+      color: var(--blue);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      margin: 0 0 16px;
+      color: var(--navy);
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+    }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.08rem;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 58px;
+      align-items: start;
+    }
+
+    .about-copy p {
+      margin-top: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .fact-card {
+      padding: 30px;
+      border-radius: 16px;
+      background: var(--navy);
+      color: var(--white);
+      box-shadow: var(--shadow);
+    }
+
+    .fact-card strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.35rem;
+    }
+
+    .fact-card p {
+      margin: 0;
+      color: #dce8f3;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .card {
+      height: 100%;
+      padding: 30px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--white);
+      box-shadow: 0 7px 22px rgba(18, 36, 58, 0.06);
+    }
+
+    .card-number {
+      display: inline-flex;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 20px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      color: var(--blue);
+      background: var(--light-blue);
+      font-weight: 900;
+    }
+
+    .card h4 {
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 1.2rem;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .reasons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .reason {
+      display: flex;
+      gap: 15px;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--white);
+    }
+
+    .check {
+      flex: 0 0 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      background: var(--blue);
+      border-radius: 50%;
+      font-weight: 900;
+    }
+
+    .reason strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--navy);
+    }
+
+    .reason span {
+      color: var(--muted);
+    }
+
+    .contact-panel {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 50px;
+      padding: 50px;
+      border-radius: 22px;
+      color: var(--white);
+      background: var(--navy);
+      box-shadow: var(--shadow);
+    }
+
+    .contact-panel h3 {
+      color: var(--white);
+    }
+
+    .contact-panel p {
+      color: #cfdeec;
+    }
+
+    .contact-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .contact-item {
+      padding: 17px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.17);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .contact-item span {
+      display: block;
+      color: #afc5d9;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .contact-item a {
+      display: inline-block;
+      margin-top: 3px;
+      color: var(--white);
+      font-weight: 700;
+      text-decoration: none;
+      word-break: break-word;
+    }
+
+    .contact-item a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      padding: 30px 0;
+      color: #c7d4e0;
+      background: #0b1726;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-content,
+      .about-grid,
+      .contact-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .warehouse-art {
+        min-height: 320px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero-content {
+        min-height: auto;
+        padding: 76px 0;
+      }
+
+      .warehouse-art {
+        min-height: 280px;
+      }
+
+      section {
+        padding: 68px 0;
+      }
+
+      .grid,
+      .reasons {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-panel {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <nav aria-label="Main navigation">
+        <a class="brand" href="#home">AMSpirit LLC</a>
+
+        <div class="nav-links">
+          <a href="#about">About</a>
+          <a href="#products">Products</a>
+          <a href="#why-us">Why Us</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="container hero-content">
+        <div>
+          <span class="eyebrow">Texas-Based E-Commerce Retailer</span>
+
+          <h1>AMSpirit LLC</h1>
+
+          <h2>Reliable E-Commerce Solutions</h2>
+
+          <p>
+            Delivering quality consumer electronics, office products,
+            computer accessories, gaming products, and home goods through
+            established online marketplaces across the United States.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="#products">
+              Explore Our Categories
+            </a>
+
+            <a class="button button-secondary" href="#contact">
+              Contact Us
+            </a>
+          </div>
+        </div>
+
+        <div class="warehouse-art" aria-label="Abstract warehouse illustration">
+          <div class="shelf one"></div>
+          <div class="shelf two"></div>
+          <div class="shelf three"></div>
+
+          <div class="post one"></div>
+          <div class="post two"></div>
+          <div class="post three"></div>
+
+          <div class="box a"></div>
+          <div class="box b"></div>
+          <div class="box c"></div>
+          <div class="box d"></div>
+          <div class="box e"></div>
+          <div class="box f"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <div class="container">
+        <div class="section-heading">
+          <div class="section-label">About Us</div>
+          <h3>Focused on reliable online retail</h3>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-copy">
+            <p>
+              AMSpirit LLC is a Texas-based e-commerce company specializing
+              in consumer electronics, office products, computer accessories,
+              gaming products, and home goods. We serve customers through
+              established online marketplaces across the United States.
+            </p>
+
+            <p>
+              Our mission is to provide authentic products, competitive
+              pricing, dependable order fulfillment, and responsive customer
+              service while building long-term relationships with customers
+              and business partners.
+            </p>
+          </div>
+
+          <aside class="fact-card">
+            <strong>Professional, responsive and dependable</strong>
+            <p>
+              We focus on efficient operations, accurate order processing,
+              and clear communication throughout every transaction.
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="products">
+      <div class="container">
+        <div class="section-heading">
+          <div class="section-label">Products &amp; Services</div>
+          <h3>Consumer products for everyday needs</h3>
+          <p>
+            Our inventory spans several established retail categories,
+            allowing us to serve a broad range of customers.
+          </p>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <div class="card-number">01</div>
+            <h4>Consumer Electronics</h4>
+            <p>
+              Audio products, printers, storage devices, accessories,
+              and other consumer technology products.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-number">02</div>
+            <h4>Computer Accessories</h4>
+            <p>
+              Storage, peripherals, connectivity products, and useful
+              computer-related accessories.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-number">03</div>
+            <h4>Office Products</h4>
+            <p>
+              Office equipment, printing supplies, and practical workplace
+              essentials.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-number">04</div>
+            <h4>Gaming Products</h4>
+            <p>
+              Gaming accessories, storage solutions, audio equipment,
+              and related products.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-number">05</div>
+            <h4>Home Goods</h4>
+            <p>
+              Household products, small appliances, and useful items
+              for everyday living.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-number">06</div>
+            <h4>E-Commerce Operations</h4>
+            <p>
+              Inventory management, order processing, shipping coordination,
+              and customer support.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="why-us">
+      <div class="container">
+        <div class="section-heading">
+          <div class="section-label">Why Choose Us</div>
+          <h3>Built around dependable service</h3>
+        </div>
+
+        <div class="reasons">
+          <div class="reason">
+            <div class="check">✓</div>
+            <div>
+              <strong>Authentic Products</strong>
+              <span>Products sourced through established retail channels.</span>
+            </div>
+          </div>
+
+          <div class="reason">
+            <div class="check">✓</div>
+            <div>
+              <strong>Competitive Pricing</strong>
+              <span>Value-focused pricing across multiple product categories.</span>
+            </div>
+          </div>
+
+          <div class="reason">
+            <div class="check">✓</div>
+            <div>
+              <strong>Reliable Fulfillment</strong>
+              <span>Careful order processing and dependable shipping coordination.</span>
+            </div>
+          </div>
+
+          <div class="reason">
+            <div class="check">✓</div>
+            <div>
+              <strong>Responsive Support</strong>
+              <span>Clear and timely communication when assistance is needed.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="container">
+        <div class="contact-panel">
+          <div>
+            <div class="section-label" style="color:#9fc7e8;">Contact</div>
+            <h3>Connect with AMSpirit LLC</h3>
+            <p>
+              For business inquiries, orders, customer support, or financial
+              correspondence, please use the appropriate email address.
+            </p>
+
+            <p>
+              <strong>AMSpirit LLC</strong><br>
+              Texas, United States
+            </p>
+          </div>
+
+          <div class="contact-list">
+            <div class="contact-item">
+              <span>General Inquiries</span>
+              <a href="mailto:admin@amspiritllc.com">
+                admin@amspiritllc.com
+              </a>
+            </div>
+
+            <div class="contact-item">
+              <span>Sales</span>
+              <a href="mailto:sales@amspiritllc.com">
+                sales@amspiritllc.com
+              </a>
+            </div>
+
+            <div class="contact-item">
+              <span>Customer Support</span>
+              <a href="mailto:support@amspiritllc.com">
+                support@amspiritllc.com
+              </a>
+            </div>
+
+            <div class="contact-item">
+              <span>Orders</span>
+              <a href="mailto:orders@amspiritllc.com">
+                orders@amspiritllc.com
+              </a>
+            </div>
+
+            <div class="contact-item">
+              <span>Finance</span>
+              <a href="mailto:finance@amspiritllc.com">
+                finance@amspiritllc.com
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      © 2026 AMSpirit LLC. All rights reserved.
+    </div>
+  </footer>
+</body>
+</html>
