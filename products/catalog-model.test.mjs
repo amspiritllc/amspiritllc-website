@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {parseCatalog,selectItems,hasPrice,inquiry} from './catalog-model.mjs';
+const data=JSON.parse(fs.readFileSync(new URL('./products.json',import.meta.url),'utf8')),items=parseCatalog(data);
+test('eight fictional items in exact v1 schema',()=>{assert.equal(items.length,8);assert.ok(items.every(p=>p.id.startsWith('sample-')));});
+test('category and text search combine',()=>{assert.equal(selectItems(items,{category:'home-goods'}).length,2);assert.equal(selectItems(items,{category:'home-goods',query:'LAMP'}).length,1);assert.equal(selectItems(items,{query:'not-an-item'}).length,0);});
+test('sort prices, keep unavailable last',()=>{const lo=selectItems(items,{sort:'low'}).filter(hasPrice),hi=selectItems(items,{sort:'high'}).filter(hasPrice);assert.deepEqual(lo.map(p=>p.price),[...lo.map(p=>p.price)].sort((a,b)=>a-b));assert.equal(hi[0].price,lo.at(-1).price);assert.ok(!hasPrice(selectItems(items,{sort:'low'}).at(-1)));});
+test('null or unavailable always hides price',()=>{assert.equal(hasPrice({available:true,price:null}),false);assert.equal(hasPrice({available:false,price:99}),false);});
+test('unknown fields and nonlocal images reject entire feed',()=>{for(const change of [{cost:2},{image:'https://example.com/p.webp'},{image:'/products/img/../x.webp'},{featured:101},{price:-2},{category:'invented'}]){const d=structuredClone(data);Object.assign(d.items[0],change);assert.throws(()=>parseCatalog(d));}});
+test('malformed root, duplicates and invalid dates reject',()=>{for(const d of [{...data,schema:'v0'},{...data,generatedAt:'bad'},{...data,items:[items[0],items[0]]},{...data,extra:true}])assert.throws(()=>parseCatalog(d));});
+test('email contains only encoded item-name subject',()=>{assert.equal(inquiry({name:'Desk & pen?'}),'mailto:sales@amspiritllc.com?subject=Inquiry%3A%20Desk%20%26%20pen%3F');assert.ok(!inquiry(items[0]).includes('&body='));});
