@@ -1,0 +1,82 @@
+import {CONFIG,cents,integer,total,validate,today,invoiceNumber,filename} from './model.mjs';
+import {dictionaries} from './i18n.mjs';
+let lang='en', dirty=false, manualNumber=false, manualSignature=false, showErrors=false;
+const blank=()=>({vendorType:'individual',legalName:'',businessName:'',contact:'',ein:'',street:'',cityStateZip:'',phone:'',email:'',invoiceNo:invoiceNumber(''),invoiceDate:today(),statement:false,statementDescription:dictionaries[lang].statementDefault,statementTotal:'',from:'',to:'',statementCount:'',items:[{description:'',qty:'',price:''}],payment:'ach',holder:'',bank:'',routing:'',account:'',accountConfirm:'',recipient:'',zelle:'',zelleConfirm:'',certified:false,signature:'',title:'',signatureDate:today()});
+let state=blank();
+const root=document.querySelector('#app'), printout=document.querySelector('#printout');
+const t=key=>dictionaries[lang][key]??key;
+const money=n=>new Intl.NumberFormat(lang==='en'?'en-US':'zh-CN',{style:'currency',currency:'USD'}).format(n/100);
+function el(tag,text='',props={}) {const e=document.createElement(tag);e.textContent=text;for(const [k,v] of Object.entries(props))e.setAttribute(k,String(v));return e;}
+function button(text,fn,props={}) {const b=el('button',text,{type:'button',...props});b.addEventListener('click',fn);return b;}
+function field(key,label=key,help='',required=true,options={}) {
+ const box=el('div','',{class:'field'}), l=el('label',t(label)+(required?' *':''),{for:key});
+ const input=el('input','',{id:key,name:key,autocomplete:'off',maxlength:options.maxlength??120,...options});
+ input.value=state[key]??''; if(required)input.setAttribute('aria-required','true');
+ input.setAttribute('aria-describedby',`${key}-help ${key}-error`);
+ input.addEventListener('input',()=>change(key,input.value));
+ box.append(l,input,el('span',help?t(help):'',{id:`${key}-help`,class:'help'}),el('span','',{id:`${key}-error`,class:'error'}));return box;
+}
+function grid(...fields){const g=el('div','',{class:'grid'});g.append(...fields);return g;}
+function card(step,key){const c=el('section','',{class:'card'}), h=el('h2');h.append(el('span',step,{class:'step','aria-hidden':'true'}),document.createTextNode(t(key)));c.append(h);root.append(c);return c;}
+function choices(key,values){const fs=el('fieldset','',{id:key}),legend=el('legend',t(key));fs.append(legend);const group=el('div','',{class:'choices'});values.forEach(([value,label])=>{const l=el('label'),i=el('input','',{type:'radio',name:key,value,id:`${key}-${value}`});i.checked=state[key]===value;i.addEventListener('change',()=>{state[key]=value;dirty=true;if(key==='vendorType')autofill();render();});l.append(i,document.createTextNode(t(label)));group.append(l);});fs.append(group);return fs;}
+function checkbox(key,label,fn){const wrap=el('div','',{class:'check'}), i=el('input','',{type:'checkbox',id:key,name:key});i.checked=state[key];i.addEventListener('change',()=>{state[key]=i.checked;dirty=true;fn();});wrap.append(i,el('label',t(label),{for:key}));return wrap;}
+function autofill(){if(!manualNumber)state.invoiceNo=invoiceNumber(state.legalName);if(!manualSignature)state.signature=state.vendorType==='business'?state.contact:state.legalName;for(const k of ['invoiceNo','signature']){const i=document.getElementById(k);if(i)i.value=state[k];}}
+function change(key,value){state[key]=value;dirty=true;if(key==='invoiceNo')manualNumber=true;if(key==='signature')manualSignature=true;if(key==='legalName'||key==='contact')autofill();update();}
+function render(){
+ root.replaceChildren();document.documentElement.lang=lang==='en'?'en':'zh-CN';document.title=t('pageTitle');
+ document.getElementById('home-link').textContent=t('home');
+ document.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.language===lang));
+ root.append(el('h1',t('heading')));const intro=el('p',t('intro')+' ');intro.append(el('a',CONFIG.email,{href:`mailto:${CONFIG.email}`}));root.append(intro,el('p',t('requiredNote'),{class:'sub'}));
+ const bill=el('section','',{class:'card'});bill.append(el('h2',`${t('billTo')} · ${t('readOnly')}`),el('div',`${CONFIG.company}\n${CONFIG.address}`,{class:'bill'}));root.append(bill);
+ const from=card('1','fromHeading');from.append(choices('vendorType',[['individual','individual'],['business','business']]));
+ const fs=[field('legalName',state.vendorType==='business'?'businessLegalName':'legalName','nameHelp')];
+ if(state.vendorType==='business')fs.push(field('contact','contact','contactHelp'),field('ein','ein','einHelp',false,{maxlength:10}));else fs.push(field('businessName','businessName','',false));
+ fs.push(field('street','street','addressHelp'),field('cityStateZip','cityStateZip','addressHelp'),field('phone','phone','phoneHelp',true,{type:'tel',maxlength:30}),field('email','email','emailHelp',true,{type:'email'}));from.append(grid(...fs));
+ const invoice=card('2','invoiceHeading');invoice.append(el('p',t('claim'),{class:'claim'}),grid(field('invoiceNo','invoiceNo','numberHelp',true,{maxlength:60}),field('invoiceDate','invoiceDate','dateHelp',true,{type:'date'})));
+ const items=card('3','itemsHeading');items.append(checkbox('statement','statement',render),el('p',t('statementHelp'),{class:'help'}));
+ if(state.statement){items.append(grid(field('statementDescription','statementDescription','',true,{maxlength:160}),field('statementTotal','statementTotal','',true,{inputmode:'decimal'}),field('from','from','',true,{type:'date'}),field('to','to','',true,{type:'date'}),field('statementCount','statementCount','',true,{inputmode:'numeric'})),el('p',t('statementNote'),{class:'note'}));}
+ else {
+ const table=el('table','',{class:'items-table',id:'items','aria-label':t('itemsHeading')}),head=el('thead'),hr=el('tr');['#',t('item')+' *',t('qty')+' *',t('unitPrice')+' *',t('amount'),''].forEach(s=>hr.append(el('th',s,{scope:'col'})));head.append(hr);table.append(head);const body=el('tbody'),example=el('tr','',{class:'example'});['—',t('example'),'1','25.00','25.00',t('notCounted')].forEach(s=>example.append(el('td',s)));body.append(example);
+ state.items.forEach((row,i)=>{const tr=el('tr');tr.append(el('td',String(i+1)));for(const [k,label] of [['description','item'],['qty','qty'],['price','unitPrice']]){const id=`item-${i}-${k}`,td=el('td'),f=field(id,label,'',true,{maxlength:k==='description'?160:k==='qty'?6:12,inputmode:k==='description'?'text':k==='qty'?'numeric':'decimal'}),input=f.querySelector('input');input.value=row[k];input.addEventListener('input',()=>{state.items[i][k]=input.value;delete state[id];update();});td.append(f);tr.append(td);}tr.append(el('td','',{class:'money',id:`amount-${i}`,'data-label':t('amount')}));const td=el('td');td.append(button(t('remove'),()=>{state.items.splice(i,1);dirty=true;render();},{'aria-label':`${t('remove')} ${i+1}`}));tr.append(td);body.append(tr);});table.append(body);items.append(table,button(t('addRow'),()=>{if(state.items.length>=200){document.getElementById('row-limit').textContent=t('rowLimit');return;}state.items.push({description:'',qty:'',price:''});dirty=true;render();document.getElementById(`item-${state.items.length-1}-description`).focus();},{id:'add-row'}),el('p','',{id:'row-limit',class:'error','aria-live':'polite'}),el('p','',{id:'counts',class:'help'}));
+ }
+ const totals=el('div','',{class:'totals'}),tax=el('p',t('salesTax'));tax.append(el('span',money(0)));const due=el('p',t('totalDue'),{class:'total'});due.append(el('span','',{id:'total'}));totals.append(tax,due);items.append(totals,el('p',t('taxNote'),{class:'help'}));
+ const pay=card('4','paymentHeading');pay.append(choices('payment',[['ach','ach'],['zelle','zelleChoice']]),el('p','',{id:'zelle-limit',class:'note'}));const payFields=el('div','',{id:'payment-fields'});pay.append(payFields);renderPayment();pay.append(el('p','',{id:'name-warning',class:'note',hidden:true}),el('p',t('privacy'),{class:'privacy'}),el('p',t('paymentNote'),{class:'note'}));
+ const confirm=card('5','confirmHeading'),cert=el('div','',{class:'cert'});cert.append(checkbox('certified','certified',update));const list=el('ol');t(state.vendorType==='business'?'certBusiness':'certIndividual').forEach(s=>list.append(el('li',s)));cert.append(list);confirm.append(cert,grid(field('signature',state.vendorType==='business'?'signedBy':'signature','signatureHelp'),...(state.vendorType==='business'?[field('title','title','titleHelp')]:[]),field('signatureDate','signatureDate','dateHelp',true,{type:'date'})));
+ confirm.append(el('div','',{id:'validation',class:'summary','aria-live':'polite'}),el('p',t('printHelp'),{class:'help'}));const actions=el('div','',{class:'actions'});actions.append(button(t('clear'),()=>{if(window.confirm(t('clearConfirm')))reset();}),button(t('download'),download,{id:'download',class:'primary','aria-disabled':'true'}));confirm.append(actions,el('p','',{id:'download-status','aria-live':'polite'}));update();
+}
+function renderPayment(){const fields=document.getElementById('payment-fields');fields.replaceChildren(state.payment==='ach'?grid(field('holder','holder','holderHelp'),field('bank'),field('routing','routing','routingHelp',true,{inputmode:'numeric',maxlength:9}),field('account','account','accountHelp',true,{type:'password',inputmode:'numeric',maxlength:17}),field('accountConfirm','accountConfirm','accountHelp',true,{type:'password',inputmode:'numeric',maxlength:17})):grid(field('recipient','recipient','holderHelp'),field('zelle','zelle','zelleHelp'),field('zelleConfirm','zelleConfirm','zelleHelp')));}
+function update(){
+ const n=total(state);document.getElementById('total').textContent=money(n);state.items.forEach((r,i)=>{const a=document.getElementById(`amount-${i}`);if(a)a.textContent=money((integer(r.qty)?Number(r.qty):0)*(cents(r.price)??0));});
+ const count=document.getElementById('counts');if(count)count.textContent=`${state.items.length} ${t('rows')} · ${state.items.reduce((s,r)=>s+(integer(r.qty)?Number(r.qty):0),0)} ${t('units')}`;
+ const z=document.getElementById('payment-zelle');z.disabled=n>50000;document.getElementById('zelle-limit').textContent=t(n>50000?'zelleLimit':'zelleWithin');
+ if(n>50000&&state.payment==='zelle'){state.payment='ach';document.getElementById('payment-ach').checked=true;z.checked=false;renderPayment();}
+ const warning=document.getElementById('name-warning'),payName=state[state.payment==='ach'?'holder':'recipient'].trim();warning.hidden=!payName||!state.legalName.trim()||payName.toLocaleLowerCase()===state.legalName.trim().toLocaleLowerCase();warning.textContent=t('nameMismatch');
+ const errors=validate(state);document.getElementById('download').setAttribute('aria-disabled',errors.length>0);
+ document.querySelectorAll('[aria-invalid]').forEach(i=>i.removeAttribute('aria-invalid'));document.querySelectorAll('.field .error').forEach(e=>e.textContent='');
+ const summary=document.getElementById('validation');summary.replaceChildren();
+ if(showErrors&&errors.length){summary.append(el('p',t('errorHeading')));const ul=el('ul');for(const e of errors){const input=document.getElementById(e.field),error=document.getElementById(`${e.field}-error`);if(input)input.setAttribute('aria-invalid','true');if(error)error.textContent=t(e.key);const label=input?.closest('.field')?.querySelector('label')?.textContent??t(e.field==='items'?'itemsHeading':e.field);const a=el('a',`${label}: ${t(e.key)}`,{href:`#${e.field}`});a.addEventListener('click',ev=>{ev.preventDefault();focusField(e.field);});const li=el('li');li.append(a);ul.append(li);}summary.append(ul);}
+}
+function focusField(key){const e=document.getElementById(key);if(!e)return;if(!e.matches('input,button,select'))e.setAttribute('tabindex','-1');e.focus();e.scrollIntoView({block:'center',behavior:'instant'});}
+function reset(){state=blank();dirty=manualNumber=manualSignature=showErrors=false;printout.replaceChildren();render();}
+function block(title,lines){const b=el('section','',{class:'print-block'});b.append(el('h2',title),el('div',lines.filter(Boolean).join('\n')));return b;}
+async function preparePrint(){
+ await document.fonts.ready;printout.replaceChildren();let body,page;const pages=[];
+ function next(){page=el('section','',{class:'print-page'});body=el('div','',{class:'print-body'});const h=el('div','',{class:'print-heading'});h.append(el('h1',t('invoice')),el('div',`${state.invoiceNo}\n${t('invoiceDate')}: ${state.invoiceDate}`,{class:'bill'}));body.append(h);page.append(body);printout.append(page);pages.push(page);}
+ function fits(){return body.getBoundingClientRect().height<=page.getBoundingClientRect().height-22;}
+ function add(node){body.append(node);if(!fits()){node.remove();next();body.append(node);if(!fits())throw new Error('pagination');}}
+ next();const columns=el('div','',{class:'print-columns'});columns.append(block(t('fromHeading'),[state.legalName,state.vendorType==='business'?`${t('contact')}: ${state.contact}`:state.businessName,state.vendorType==='business'&&state.ein?`EIN: ${state.ein}`:'',state.street,state.cityStateZip,state.phone,state.email]),block(t('billTo'),[CONFIG.company,CONFIG.address]));add(columns);add(el('p',t('claim')));
+ if(state.statement)add(block(t('statement'),[state.statementDescription,`${t('from')}: ${state.from}`,`${t('to')}: ${state.to}`,`${t('statementCount')}: ${state.statementCount}`,t('statementNote')]));
+ else {let table,tbody;function newTable(){table=el('table','',{class:'print-table'});const thead=el('thead'),tr=el('tr');['#',t('item'),t('qty'),t('unitPrice'),t('amount')].forEach(s=>tr.append(el('th',s,{scope:'col'})));thead.append(tr);tbody=el('tbody');table.append(thead,tbody);body.append(table);}newTable();state.items.forEach((r,i)=>{const tr=el('tr');[String(i+1),r.description,r.qty,money(cents(r.price)),money(Number(r.qty)*cents(r.price))].forEach(s=>tr.append(el('td',s)));tbody.append(tr);if(!fits()){tr.remove();if(!tbody.children.length)table.remove();next();newTable();tbody.append(tr);if(!fits())throw new Error('pagination');}});}
+ add(block(t('totalDue'),[money(total(state)),`${t('salesTax')}: ${money(0)}`,t('taxNote')]));
+ add(block(t('paymentHeading'),state.payment==='ach'?[t('ach'),`${t('holder')}: ${state.holder}`,`${t('bank')}: ${state.bank}`,`${t('routing')}: ${state.routing}`,`${t('account')}: ${state.account}`]:[t('zelleChoice'),`${t('recipient')}: ${state.recipient}`,`${t('zelle')}: ${state.zelle}`]));
+ add(block(t('certified'),t(state.vendorType==='business'?'certBusiness':'certIndividual').map((s,i)=>`${i+1}. ${s}`)));
+ add(block(t(state.vendorType==='business'?'signedBy':'signature'),[state.signature,state.vendorType==='business'?`${t('title')}: ${state.title}`:'',`${t('signatureDate')}: ${state.signatureDate}`]));
+ pages.forEach((p,i)=>p.append(el('footer',`${t('invoice')} ${state.invoiceNo} · ${t('page')} ${i+1} ${t('of')} ${pages.length} · ${t('totalDue')} ${money(total(state))}`,{class:'print-footer'})));
+ return filename(state);
+}
+async function download(){showErrors=true;update();const errors=validate(state);if(errors.length){focusField(errors[0].field);return;}try{const name=await preparePrint();document.title=name;document.getElementById('download-status').textContent=`${t('saveAs')}: ${name}.pdf. ${t('afterDownload')} ${CONFIG.email}.`;window.print();}catch{document.getElementById('download-status').textContent=t('printFailure');}}
+document.querySelectorAll('[data-language]').forEach(b=>b.addEventListener('click',()=>{const oldDefault=t('statementDefault');lang=b.dataset.language;if(state.statementDescription===oldDefault)state.statementDescription=t('statementDefault');render();}));
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+window.addEventListener('pagehide',()=>{state=blank();printout.replaceChildren();root.replaceChildren();dirty=false;});
+window.addEventListener('pageshow',e=>{if(e.persisted)reset();});
+render();
