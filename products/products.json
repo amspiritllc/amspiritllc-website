@@ -1,0 +1,86 @@
+{
+  "schema": "amspirit-showcase-v1",
+  "generatedAt": "2026-10-21T16:30:00Z",
+  "items": [
+    {
+      "id": "sample-arc-lamp",
+      "name": "Arc desk lamp",
+      "category": "home-goods",
+      "description": "A fictional adjustable desk lamp with a soft, focused light. Illustrative sample only.",
+      "image": "/products/img/sample-arc-lamp.webp",
+      "price": 49.99,
+      "available": true,
+      "featured": 95
+    },
+    {
+      "id": "sample-keyboard",
+      "name": "Everyday keyboard",
+      "category": "computer-accessories",
+      "description": "A fictional compact keyboard for a clear, comfortable workspace. Illustrative sample only.",
+      "image": "/products/img/sample-keyboard.webp",
+      "price": 39.98,
+      "available": true,
+      "featured": 90
+    },
+    {
+      "id": "sample-headphones",
+      "name": "Studio headphones",
+      "category": "consumer-electronics",
+      "description": "A fictional over-ear listening companion for everyday downtime. Illustrative sample only.",
+      "image": "/products/img/sample-headphones.webp",
+      "price": 79.99,
+      "available": true,
+      "featured": 85
+    },
+    {
+      "id": "sample-gamepad",
+      "name": "Play wireless controller",
+      "category": "gaming",
+      "description": "A fictional controller with a simple, familiar layout. Illustrative sample only.",
+      "image": "/products/img/sample-gamepad.webp",
+      "price": 44.98,
+      "available": true,
+      "featured": 80
+    },
+    {
+      "id": "sample-notebook",
+      "name": "Desk notes set",
+      "category": "office-products",
+      "description": "A fictional set of notebooks for ideas, plans, and everyday lists. Illustrative sample only.",
+      "image": "/products/img/sample-notebook.webp",
+      "price": 19.99,
+      "available": true,
+      "featured": 70
+    },
+    {
+      "id": "sample-speaker",
+      "name": "Mini desktop speaker",
+      "category": "consumer-electronics",
+      "description": "A fictional compact speaker designed to sit neatly on a desk. Illustrative sample only.",
+      "image": "/products/img/sample-speaker.webp",
+      "price": null,
+      "available": false,
+      "featured": 60
+    },
+    {
+      "id": "sample-organizer",
+      "name": "Everyday organizer",
+      "category": "other",
+      "description": "A fictional organizer for small everyday essentials. Illustrative sample only.",
+      "image": "/products/img/sample-organizer.webp",
+      "price": 24.99,
+      "available": true,
+      "featured": 50
+    },
+    {
+      "id": "sample-kettle",
+      "name": "Morning kettle",
+      "category": "home-goods",
+      "description": "A fictional countertop kettle with a clean, simple silhouette. Illustrative sample only.",
+      "image": "/products/img/sample-kettle.webp",
+      "price": 59.98,
+      "available": false,
+      "featured": 40
+    }
+  ]
+}
