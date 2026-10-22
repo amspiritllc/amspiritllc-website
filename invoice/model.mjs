@@ -13,7 +13,14 @@ export function routing(value) {
     [0,1,2,3,4,5,6,7,8].reduce((sum,i)=>sum+Number(value[i])*[3,7,1][i%3],0)%10===0;
 }
 export function zelle(value) {
-  return email(value) ? value.toLowerCase() : /^\d{10}$/.test(value.replace(/[ ()+.-]/g,'')) ? value.replace(/[ ()+.-]/g,'') : null;
+  if(email(value)) return value.toLowerCase();
+  const digits=value.replace(/[ ()+.-]/g,'');
+  return /^1?\d{10}$/.test(digits) ? digits.slice(-10) : null;
+}
+export function payeeMismatch(state) {
+  const payee=(state[state.payment==='ach'?'holder':'recipient']??'').trim();
+  const legal=(state.legalName??'').trim();
+  return payee&&legal&&payee.toLocaleLowerCase()!==legal.toLocaleLowerCase()?payee:null;
 }
 export function dateValid(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10)===s; }
 export function today(d=new Date()) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
