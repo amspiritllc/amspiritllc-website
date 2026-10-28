@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cents,total,routing,validate,invoiceNumber,zelle,dateValid,filename,payeeMismatch} from './model.mjs';
+import {cents,total,routing,validate,invoiceNumber,zelle,dateValid,filename,payeeMismatch,formatPhone,formatDate} from './model.mjs';
 import {dictionaries} from './i18n.mjs';
 const valid=()=>({vendorType:'individual',legalName:'Sample Vendor',street:'100 Example Street',cityStateZip:'Example TX 75000',phone:'5551234567',email:'vendor@example.com',invoiceNo:'SV-20261021-01',invoiceDate:'2026-10-21',signature:'Sample Vendor',signatureDate:'2026-10-21',items:[{description:'Sample item',qty:'3',price:'0.10'}],payment:'ach',holder:'Sample Vendor',bank:'Example Bank',routing:'021000021',account:'12345678',accountConfirm:'12345678',certified:true});
 test('money is exact integer cents',()=>{assert.equal(cents('0.10'),10);assert.equal(total(valid()),30);for(const s of ['1.001','-1','1e2','NaN',''])assert.equal(cents(s),null);});
-test('valid individual and business',()=>{assert.deepEqual(validate(valid()),[]);const s={...valid(),vendorType:'business',contact:'Sample Person',title:'Owner'};assert.deepEqual(validate(s),[]);delete s.title;assert.ok(validate(s).some(e=>e.field==='title'));});
+test('valid individual and business require confirmation but no signature fields',()=>{const s=valid();delete s.signature;delete s.signatureDate;assert.deepEqual(validate(s),[]);assert.deepEqual(validate({...s,vendorType:'business',contact:'Sample Person'}),[]);assert.ok(validate({...s,certified:false}).some(e=>e.key==='certRequired'));});
 test('invalid bank, missing field, mismatch, zero quantity block',()=>{for(const patch of [{routing:'021000022'},{legalName:''},{accountConfirm:'99999'},{items:[{description:'Item',qty:'0',price:'1'}]}])assert.ok(validate({...valid(),...patch}).length);assert.equal(routing('000000000'),false);});
 test('Zelle limit and confirmation',()=>{const s={...valid(),payment:'zelle',recipient:'Sample Vendor',zelle:'test@example.com',zelleConfirm:'test@example.com',items:[{description:'Item',qty:'1',price:'305'}]};assert.deepEqual(validate(s),[]);s.items[0].price='600';assert.ok(validate(s).some(e=>e.key==='zelleLimit'));assert.equal(zelle('(555) 123-4567'),'5551234567');});
 test('statement mode dates and positive total',()=>{const s={...valid(),statement:true,statementDescription:'Statement',statementTotal:'45.67',from:'2026-10-01',to:'2026-10-21',statementCount:'3'};assert.equal(total(s),4567);assert.deepEqual(validate(s),[]);s.to='2026-09-01';assert.ok(validate(s).some(e=>e.key==='dateOrder'));});
@@ -23,7 +23,16 @@ test('payee mismatch is shared by screen/PDF and never blocks payment validation
  assert.equal(payeeMismatch({...valid(),holder:'Sample Vendor, Inc.'}),'Sample Vendor, Inc.');
  assert.equal(payeeMismatch({...valid(),payment:'zelle',recipient:'Alternate Payee'}),'Alternate Payee');
  assert.equal(payeeMismatch({...valid(),holder:''}),null);
+ assert.equal(payeeMismatch({...valid(),legalName:'Sample Trading LLC',holder:'  SAMPLE   Trading, LLC. '}),null);
+ assert.equal(payeeMismatch({...valid(),legalName:'O’Brien LLC',holder:"O'Brien LLC"}),null);
+ assert.equal(payeeMismatch({...valid(),legalName:'Sample Trading LLC',holder:'Sample Trading Inc.'}),'Sample Trading Inc.');
 });
+test('optional UPC preserves leading zeros and rejects malformed values',()=>{
+ for(const upc of [undefined,'','012345678905','01234565'])assert.deepEqual(validate({...valid(),items:[{...valid().items[0],upc}]}),[]);
+ for(const upc of ['1e11','01234567890','<script>'])assert.ok(validate({...valid(),items:[{...valid().items[0],upc}]}).some(e=>e.field==='item-0-upc'));
+});
+test('printed phone and date formatting is stable',()=>{assert.equal(formatPhone('+1 555 123 4567'),'(555) 123-4567');assert.equal(formatDate('2026-10-21'),'Oct 21, 2026');assert.equal(formatDate('2026-10-21','zh'),'2026年10月21日');});
+test('new print labels have bilingual parity',()=>{for(const key of ['upc','upcInvalid','description','printUnitPrice','printAmount','invoiceLabel','printInvoiceNo','terms','dueUponReceipt','vendorContact','lineItems','subtotal','remitPayment','vendorTerms','vendorTermsText','printResaleNote'])for(const lang of ['en','zh'])assert.ok(dictionaries[lang][key]);});
 test('Chinese certification and PDF labels match requested bilingual wording',()=>{
  for(const key of ['certIndividual','certBusiness'])assert.equal(dictionaries.zh[key][1],'本发票及所附对账单（如有）中的商品、数量和金额真实且完整。');
  assert.equal(dictionaries.en.statementHeading,'Detailed statement attached');assert.equal(dictionaries.zh.statementHeading,'附详细对账单');

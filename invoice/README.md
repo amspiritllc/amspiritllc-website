@@ -12,7 +12,9 @@ The button uses `aria-disabled` while invalid, with a guarded click that explain
 
 The browser may keep a downloaded PDF or print-job history outside this page. Full payment details are deliberately included in the PDF; protect the downloaded file. A fresh page or reload starts empty. Language and form data are not saved. Do not add analytics, remote fonts or scripts to this route.
 
-Payee-name differences remain warnings, not download blockers. A visible warning containing the payee name is printed inside the payment block for both ACH and Zelle; case-only and surrounding-space differences are ignored. Optional US country prefix `1` is accepted for Zelle mobile numbers and the PDF shows the normalized 10-digit number. Table PDFs include total row/unit counts; statement PDFs use a dedicated heading and labeled description.
+Payee-name differences remain warnings, not download blockers. A visible warning containing the payee name is printed inside the payment block for both ACH and Zelle; case, punctuation and repeated whitespace are ignored. Optional US country prefix `1` is accepted for Zelle mobile numbers and the PDF shows the normalized 10-digit number. Optional per-line UPCs preserve leading zeros (8 or 12 digits).
+
+The print layout follows the approved vendor-letterhead mockup, with bilingual labels, invoice metadata, Bill to/vendor contact, repeating shaded item headers, line/unit counts, boxed totals, payment details and a Vendor terms paragraph. The form still requires the confirmation checkbox; signature, title and signature-date fields are no longer used. Every measured Letter page carries the vendor, invoice number, page count and total due. Statement mode uses the same layout with a summary block. All PDF data remains text-only and local.
 
 ## Review gates
 

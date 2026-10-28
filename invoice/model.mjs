@@ -20,8 +20,11 @@ export function zelle(value) {
 export function payeeMismatch(state) {
   const payee=(state[state.payment==='ach'?'holder':'recipient']??'').trim();
   const legal=(state.legalName??'').trim();
-  return payee&&legal&&payee.toLocaleLowerCase()!==legal.toLocaleLowerCase()?payee:null;
+  const normalized=value=>value.normalize('NFKC').toLowerCase().replace(/\p{P}/gu,'').replace(/\s+/gu,' ').trim();
+  return payee&&legal&&normalized(payee)!==normalized(legal)?payee:null;
 }
+export function formatPhone(value) {const digits=value.replace(/\D/g,'');return /^(?:1)?\d{10}$/.test(digits)?digits.slice(-10).replace(/(\d{3})(\d{3})(\d{4})/,'($1) $2-$3'):value;}
+export function formatDate(value,lang='en') {return new Intl.DateTimeFormat(lang==='en'?'en-US':'zh-CN',{year:'numeric',month:lang==='en'?'short':'long',day:'numeric',timeZone:'UTC'}).format(new Date(value+'T00:00:00Z'));}
 export function dateValid(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10)===s; }
 export function today(d=new Date()) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 export function invoiceNumber(name, date=today()) {
@@ -34,15 +37,15 @@ export function total(state) {
 }
 export function validate(s) {
   const errors=[]; const add=(field,key)=>errors.push({field,key});
-  const required=['legalName','street','cityStateZip','phone','email','invoiceNo','invoiceDate','signature','signatureDate'];
-  if(s.vendorType==='business') required.push('contact','title');
+  const required=['legalName','street','cityStateZip','phone','email','invoiceNo','invoiceDate'];
+  if(s.vendorType==='business') required.push('contact');
   if(!['individual','business'].includes(s.vendorType)) add('vendorType','required');
   if(!['ach','zelle'].includes(s.payment)) add('payment','required');
   required.forEach(k=>{if(!String(s[k]??'').trim())add(k,'required');});
   if(s.email&&!email(s.email))add('email','emailInvalid');
   if(s.phone && !/^[+\d ()-]{7,30}$/.test(s.phone))add('phone','phoneInvalid');
   if(s.vendorType==='business'&&s.ein&&!/^\d{2}-\d{7}$/.test(s.ein))add('ein','einInvalid');
-  ['invoiceDate','signatureDate'].forEach(k=>{if(s[k]&&!dateValid(s[k]))add(k,'dateInvalid');});
+  if(s.invoiceDate&&!dateValid(s.invoiceDate))add('invoiceDate','dateInvalid');
   if(s.statement) {
     ['statementDescription','statementTotal','from','to','statementCount'].forEach(k=>{if(!String(s[k]??'').trim())add(k,'required');});
     if(!cents(s.statementTotal))add('statementTotal','moneyInvalid');
@@ -53,6 +56,7 @@ export function validate(s) {
     if(!s.items.length||s.items.length>200)add('items','rowLimit');
     s.items.forEach((r,i)=>{
       if(!r.description.trim()||r.description.length>160)add(`item-${i}-description`,'descriptionInvalid');
+      if(r.upc&&!/^(?:\d{8}|\d{12})$/.test(r.upc))add(`item-${i}-upc`,'upcInvalid');
       if(!integer(r.qty))add(`item-${i}-qty`,'quantityInvalid');
       if(!cents(r.price))add(`item-${i}-price`,'moneyInvalid');
     });
