@@ -8,6 +8,8 @@ const root=document.querySelector('#app'), printout=document.querySelector('#pri
 const t=key=>dictionaries[lang][key]??key;
 const money=n=>new Intl.NumberFormat(lang==='en'?'en-US':'zh-CN',{style:'currency',currency:'USD'}).format(n/100);
 function el(tag,text='',props={}) {const e=document.createElement(tag);e.textContent=text;for(const [k,v] of Object.entries(props))e.setAttribute(k,String(v));return e;}
+// Vendor sends the PDF themselves; mailto carries only our address and the invoice number, never form data.
+function mailtoHref(){return `mailto:${CONFIG.email}?subject=${encodeURIComponent(`${t('emailSubject')} ${state.invoiceNo||''}`.trim())}`;}
 function button(text,fn,props={}) {const b=el('button',text,{type:'button',...props});b.addEventListener('click',fn);return b;}
 function field(key,label=key,help='',required=true,options={}) {
  const box=el('div','',{class:'field'}), l=el('label',t(label)+(required?' *':''),{for:key});
@@ -28,6 +30,7 @@ function render(){
  document.getElementById('home-link').textContent=t('home');
  document.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.language===lang));
  root.append(el('h1',t('heading')));const intro=el('p',t('intro')+' ');intro.append(el('a',CONFIG.email,{href:`mailto:${CONFIG.email}`}));root.append(intro,el('p',t('requiredNote'),{class:'sub'}));
+ const how=el('section','',{class:'card howto'});const steps=el('ol');for(const s of t('howSteps'))steps.append(el('li',s.replace('{email}',CONFIG.email)));how.append(el('h2',t('howHeading')),steps);root.append(how);
  const bill=el('section','',{class:'card'});bill.append(el('h2',`${t('billTo')} · ${t('readOnly')}`),el('div',`${CONFIG.company}\n${CONFIG.address}`,{class:'bill'}));root.append(bill);
  const from=card('1','fromHeading');from.append(choices('vendorType',[['individual','individual'],['business','business']]));
  const fs=[field('legalName',state.vendorType==='business'?'businessLegalName':'legalName','nameHelp')];
@@ -43,7 +46,8 @@ function render(){
  const totals=el('div','',{class:'totals'}),tax=el('p',t('salesTax'));tax.append(el('span',money(0)));const due=el('p',t('totalDue'),{class:'total'});due.append(el('span','',{id:'total'}));totals.append(tax,due);items.append(totals,el('p',t('taxNote'),{class:'help'}));
  const pay=card('4','paymentHeading');pay.append(choices('payment',[['ach','ach'],['zelle','zelleChoice']]),el('p','',{id:'zelle-limit',class:'note'}));const payFields=el('div','',{id:'payment-fields'});pay.append(payFields);renderPayment();pay.append(el('p','',{id:'name-warning',class:'note',hidden:true}),el('p',t('privacy'),{class:'privacy'}),el('p',t('paymentNote'),{class:'note'}));
  const confirm=card('5','confirmHeading'),cert=el('div','',{class:'cert'});cert.append(checkbox('certified','certified',update));const list=el('ol');t(state.vendorType==='business'?'certBusiness':'certIndividual').forEach(s=>list.append(el('li',s)));cert.append(list);confirm.append(cert);
- confirm.append(el('div','',{id:'validation',class:'summary','aria-live':'polite'}),el('p',t('printHelp'),{class:'help'}));const actions=el('div','',{class:'actions'});actions.append(button(t('clear'),()=>{if(window.confirm(t('clearConfirm')))reset();}),button(t('download'),download,{id:'download',class:'primary','aria-disabled':'true'}));confirm.append(actions,el('p','',{id:'download-status','aria-live':'polite'}));update();
+ confirm.append(el('div','',{id:'validation',class:'summary','aria-live':'polite'}),el('p',t('printHelp'),{class:'help'}));const actions=el('div','',{class:'actions'});actions.append(button(t('clear'),()=>{if(window.confirm(t('clearConfirm')))reset();}),button(t('download'),download,{id:'download',class:'primary','aria-disabled':'true'}));confirm.append(actions,el('p','',{id:'download-status','aria-live':'polite'}));
+ const mail=el('a',t('emailUs'),{id:'email-us',class:'button',href:mailtoHref()});mail.addEventListener('click',()=>{mail.href=mailtoHref();});confirm.append(el('div','',{class:'actions'}),el('p',t('emailHelp2'),{class:'help'}));confirm.lastChild.previousSibling.append(mail);update();
 }
 function renderPayment(){const fields=document.getElementById('payment-fields');fields.replaceChildren(state.payment==='ach'?grid(field('holder','holder','holderHelp'),field('bank'),field('routing','routing','routingHelp',true,{inputmode:'numeric',maxlength:9}),field('account','account','accountHelp',true,{type:'password',inputmode:'numeric',maxlength:17}),field('accountConfirm','accountConfirm','accountHelp',true,{type:'password',inputmode:'numeric',maxlength:17})):grid(field('recipient','recipient','holderHelp'),field('zelle','zelle','zelleHelp'),field('zelleConfirm','zelleConfirm','zelleHelp')));}
 function update(){
