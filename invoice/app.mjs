@@ -2,6 +2,8 @@ import {CONFIG,cents,integer,total,validate,today,invoiceNumber,payeeMismatch} f
 import {dictionaries} from './i18n.mjs';
 import {prepareInvoicePrint} from './print.mjs';
 let lang='en', dirty=false, manualNumber=false, showErrors=false;
+// Fields the vendor has left; their format errors show right away instead of only after Download.
+const touched=new Set(),digitsOnly=new Set(['routing','account','accountConfirm']);
 const blank=()=>({vendorType:'individual',legalName:'',businessName:'',contact:'',ein:'',street:'',cityStateZip:'',phone:'',email:'',invoiceNo:invoiceNumber(''),invoiceDate:today(),statement:false,statementDescription:dictionaries[lang].statementDefault,statementTotal:'',from:'',to:'',statementCount:'',items:[{description:'',upc:'',qty:'',price:''}],payment:'ach',holder:'',bank:'',routing:'',account:'',accountConfirm:'',recipient:'',zelle:'',zelleConfirm:'',certified:false});
 let state=blank();
 const root=document.querySelector('#app'), printout=document.querySelector('#printout');
@@ -71,9 +73,10 @@ function update(){
  document.querySelectorAll('[aria-invalid]').forEach(i=>i.removeAttribute('aria-invalid'));document.querySelectorAll('.field .error').forEach(e=>e.textContent='');
  const summary=document.getElementById('validation');summary.replaceChildren();
  if(showErrors&&errors.length){summary.append(el('p',t('errorHeading')));const ul=el('ul');for(const e of errors){const input=document.getElementById(e.field),error=document.getElementById(`${e.field}-error`);if(input)input.setAttribute('aria-invalid','true');if(error)error.textContent=t(e.key);const label=input?.closest('.field')?.querySelector('label')?.textContent??t(e.field==='items'?'itemsHeading':e.field);const a=el('a',`${label}: ${t(e.key)}`,{href:`#${e.field}`});a.addEventListener('click',ev=>{ev.preventDefault();focusField(e.field);});const li=el('li');li.append(a);ul.append(li);}summary.append(ul);}
+ else for(const e of errors){if(!touched.has(e.field)||e.key==='required')continue;const input=document.getElementById(e.field),error=document.getElementById(`${e.field}-error`);if(input)input.setAttribute('aria-invalid','true');if(error)error.textContent=t(e.key);}
 }
 function focusField(key){const e=document.getElementById(key);if(!e)return;if(!e.matches('input,button,select'))e.setAttribute('tabindex','-1');e.focus();e.scrollIntoView({block:'center',behavior:'instant'});}
-function reset(){state=blank();dirty=manualNumber=showErrors=false;printout.replaceChildren();render();}
+function reset(){state=blank();dirty=manualNumber=showErrors=false;touched.clear();printout.replaceChildren();render();}
 const preparePrint=()=>prepareInvoicePrint(state,lang,printout);
 async function download(){showErrors=true;update();const errors=validate(state);if(errors.length){focusField(errors[0].field);return;}try{const name=await preparePrint();document.title=name;document.getElementById('download-status').textContent=`${t('saveAs')}: ${name}.pdf. ${t('afterDownload')} ${CONFIG.email}.`;window.print();}catch{document.getElementById('download-status').textContent=t('printFailure');}}
 document.querySelectorAll('[data-language]').forEach(b=>b.addEventListener('click',()=>{const oldDefault=t('statementDefault');lang=b.dataset.language;if(state.statementDescription===oldDefault)state.statementDescription=t('statementDefault');render();}));
@@ -81,3 +84,6 @@ window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.return
 window.addEventListener('pagehide',()=>{state=blank();printout.replaceChildren();root.replaceChildren();dirty=false;});
 window.addEventListener('pageshow',e=>{if(e.persisted)reset();});
 render();
+
+document.addEventListener('input',e=>{const i=e.target;if(digitsOnly.has(i.id)&&/\D/.test(i.value))i.value=i.value.replace(/\D/g,'');},true);
+document.addEventListener('focusout',e=>{const i=e.target;if(i.matches?.('input')&&i.id&&i.value.trim()){touched.add(i.id);update();}});
