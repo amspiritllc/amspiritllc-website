@@ -9,7 +9,12 @@ const t=key=>dictionaries[lang][key]??key;
 const money=n=>new Intl.NumberFormat(lang==='en'?'en-US':'zh-CN',{style:'currency',currency:'USD'}).format(n/100);
 function el(tag,text='',props={}) {const e=document.createElement(tag);e.textContent=text;for(const [k,v] of Object.entries(props))e.setAttribute(k,String(v));return e;}
 // Vendor sends the PDF themselves; mailto carries only our address and the invoice number, never form data.
-function mailtoHref(){return `mailto:${CONFIG.email}?subject=${encodeURIComponent(`${t('emailSubject')} ${state.invoiceNo||''}`.trim())}`;}
+function mailSubject(){return encodeURIComponent(`${t('emailSubject')} ${state.invoiceNo||''}`.trim());}
+function mailtoHref(){return `mailto:${CONFIG.email}?subject=${mailSubject()}`;}
+// mailto does nothing on computers without a desktop mail app, so webmail compose links and a copy button are offered too.
+function gmailHref(){return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CONFIG.email)}&su=${mailSubject()}`;}
+function outlookHref(){return `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(CONFIG.email)}&subject=${mailSubject()}`;}
+function copyAddress(b){const show=k=>{b.textContent=t(k);setTimeout(()=>{b.textContent=t('copyAddress');},3000);};const select=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('email-address'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);show('copyManual');};if(navigator.clipboard?.writeText)navigator.clipboard.writeText(CONFIG.email).then(()=>show('copied'),select);else select();}
 function button(text,fn,props={}) {const b=el('button',text,{type:'button',...props});b.addEventListener('click',fn);return b;}
 function field(key,label=key,help='',required=true,options={}) {
  const box=el('div','',{class:'field'}), l=el('label',t(label)+(required?' *':''),{for:key});
@@ -47,7 +52,10 @@ function render(){
  const pay=card('4','paymentHeading');pay.append(choices('payment',[['ach','ach'],['zelle','zelleChoice']]),el('p','',{id:'zelle-limit',class:'note'}));const payFields=el('div','',{id:'payment-fields'});pay.append(payFields);renderPayment();pay.append(el('p','',{id:'name-warning',class:'note',hidden:true}),el('p',t('privacy'),{class:'privacy'}),el('p',t('paymentNote'),{class:'note'}));
  const confirm=card('5','confirmHeading'),cert=el('div','',{class:'cert'});cert.append(checkbox('certified','certified',update));cert.querySelector('label').append(el('span',' *',{class:'req'}));const list=el('ol');t(state.vendorType==='business'?'certBusiness':'certIndividual').forEach(s=>list.append(el('li',s)));cert.append(list,el('p',t('certNote'),{id:'cert-note',class:'cert-note'}));confirm.append(cert);
  confirm.append(el('div','',{id:'validation',class:'summary','aria-live':'polite'}),el('p',t('printHelp'),{class:'help'}));const actions=el('div','',{class:'actions'});actions.append(button(t('clear'),()=>{if(window.confirm(t('clearConfirm')))reset();}),button(t('download'),download,{id:'download',class:'primary','aria-disabled':'true'}));confirm.append(actions,el('p','',{id:'download-hint',class:'download-hint','aria-live':'polite'}),el('p','',{id:'download-status','aria-live':'polite'}));
- const mail=el('a',t('emailUs'),{id:'email-us',class:'button',href:mailtoHref()});mail.addEventListener('click',()=>{mail.href=mailtoHref();});confirm.append(el('div','',{class:'actions'}),el('p',t('emailHelp2'),{class:'help'}));confirm.lastChild.previousSibling.append(mail);update();
+ const box=el('div','',{class:'email-box'}),to=el('p',t('emailTo')+' ',{class:'email-to'});to.append(el('strong',CONFIG.email,{id:'email-address'}));const copy=button(t('copyAddress'),()=>copyAddress(copy),{id:'copy-email'});to.append(' ',copy);
+ const link=(id,label,href)=>{const a=el('a',label,{id,class:'button',href:href(),target:'_blank',rel:'noopener'});a.addEventListener('click',()=>{a.href=href();});return a;};
+ const mail=link('email-us',t('emailUs'),mailtoHref);mail.removeAttribute('target');mail.removeAttribute('rel');const links=el('div','',{class:'actions'});links.append(link('email-gmail',t('emailGmail'),gmailHref),link('email-outlook',t('emailOutlook'),outlookHref),mail);
+ box.append(el('h3',t('emailHeading')),to,links,el('p',t('emailHelp2'),{class:'help'}));confirm.append(box);update();
 }
 function renderPayment(){const fields=document.getElementById('payment-fields');fields.replaceChildren(state.payment==='ach'?grid(field('holder','holder','holderHelp'),field('bank'),field('routing','routing','routingHelp',true,{inputmode:'numeric',maxlength:9}),field('account','account','accountHelp',true,{type:'password',inputmode:'numeric',maxlength:17}),field('accountConfirm','accountConfirm','accountHelp',true,{type:'password',inputmode:'numeric',maxlength:17})):grid(field('recipient','recipient','holderHelp'),field('zelle','zelle','zelleHelp'),field('zelleConfirm','zelleConfirm','zelleHelp')));}
 function update(){
