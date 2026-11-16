@@ -5,7 +5,10 @@ let lang='en', dirty=false, manualNumber=false, showErrors=false;
 // Fields the vendor has left; their format errors show right away instead of only after Download.
 const touched=new Set(),digitsOnly=new Set(['routing','account','accountConfirm']);
 const blank=()=>({vendorType:'individual',legalName:'',businessName:'',contact:'',ein:'',street:'',cityStateZip:'',phone:'',email:'',invoiceNo:invoiceNumber(''),invoiceDate:today(),statement:false,statementDescription:dictionaries[lang].statementDefault,statementTotal:'',from:'',to:'',statementCount:'',items:[{description:'',upc:'',qty:'',price:''}],payment:'ach',holder:'',bank:'',routing:'',account:'',accountConfirm:'',recipient:'',zelle:'',zelleConfirm:'',certified:false});
-let state=blank();
+// Owner 11-16: hidden Zelle-over-$500 exception for approved vendors: open the page with #zelle-ok,
+// or press Ctrl+Alt+Z. The PDF then marks the payment as an approved exception.
+const zelleOk=()=>location.hash==='#zelle-ok';
+let state=blank();state.zelleOverride=zelleOk();
 const root=document.querySelector('#app'), printout=document.querySelector('#printout');
 const t=key=>dictionaries[lang][key]??key;
 const money=n=>new Intl.NumberFormat(lang==='en'?'en-US':'zh-CN',{style:'currency',currency:'USD'}).format(n/100);
@@ -63,8 +66,8 @@ function renderPayment(){const fields=document.getElementById('payment-fields');
 function update(){
  const n=total(state);document.getElementById('total').textContent=money(n);state.items.forEach((r,i)=>{const a=document.getElementById(`amount-${i}`);if(a)a.textContent=money((integer(r.qty)?Number(r.qty):0)*(cents(r.price)??0));});
  const count=document.getElementById('counts');if(count)count.textContent=`${state.items.length} ${t('rows')} · ${state.items.reduce((s,r)=>s+(integer(r.qty)?Number(r.qty):0),0)} ${t('units')}`;
- const z=document.getElementById('payment-zelle');z.disabled=n>50000;document.getElementById('zelle-limit').textContent=t(n>50000?'zelleLimit':'zelleWithin');
- if(n>50000&&state.payment==='zelle'){state.payment='ach';document.getElementById('payment-ach').checked=true;z.checked=false;renderPayment();}
+ const over=n>50000&&!state.zelleOverride,z=document.getElementById('payment-zelle');z.disabled=over;document.getElementById('zelle-limit').textContent=t(over?'zelleLimit':n>50000?'zelleException':'zelleWithin');
+ if(over&&state.payment==='zelle'){state.payment='ach';document.getElementById('payment-ach').checked=true;z.checked=false;renderPayment();}
  const warning=document.getElementById('name-warning');warning.hidden=!payeeMismatch(state);warning.textContent=t('nameMismatch');
  const errors=validate(state);document.getElementById('download').setAttribute('aria-disabled',errors.length>0);
  // Tell the vendor why no PDF appears: the confirmation is required, then any other field errors.
@@ -76,7 +79,7 @@ function update(){
  else for(const e of errors){if(!touched.has(e.field)||e.key==='required')continue;const input=document.getElementById(e.field),error=document.getElementById(`${e.field}-error`);if(input)input.setAttribute('aria-invalid','true');if(error)error.textContent=t(e.key);}
 }
 function focusField(key){const e=document.getElementById(key);if(!e)return;if(!e.matches('input,button,select'))e.setAttribute('tabindex','-1');e.focus();e.scrollIntoView({block:'center',behavior:'instant'});}
-function reset(){state=blank();dirty=manualNumber=showErrors=false;touched.clear();printout.replaceChildren();render();}
+function reset(){state=blank();state.zelleOverride=zelleOk();dirty=manualNumber=showErrors=false;touched.clear();printout.replaceChildren();render();}
 const preparePrint=()=>prepareInvoicePrint(state,lang,printout);
 async function download(){showErrors=true;update();const errors=validate(state);if(errors.length){focusField(errors[0].field);return;}try{const name=await preparePrint();document.title=name;document.getElementById('download-status').textContent=`${t('saveAs')}: ${name}.pdf. ${t('afterDownload')} ${CONFIG.email}.`;window.print();}catch{document.getElementById('download-status').textContent=t('printFailure');}}
 document.querySelectorAll('[data-language]').forEach(b=>b.addEventListener('click',()=>{const oldDefault=t('statementDefault');lang=b.dataset.language;if(state.statementDescription===oldDefault)state.statementDescription=t('statementDefault');render();}));
@@ -87,3 +90,4 @@ render();
 
 document.addEventListener('input',e=>{const i=e.target;if(digitsOnly.has(i.id)&&/\D/.test(i.value))i.value=i.value.replace(/\D/g,'');},true);
 document.addEventListener('focusout',e=>{const i=e.target;if(i.matches?.('input')&&i.id&&i.value.trim()){touched.add(i.id);update();}});
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&(e.key==='z'||e.key==='Z')){state.zelleOverride=true;update();}});
