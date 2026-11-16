@@ -68,7 +68,7 @@ export function validate(s) {
     if(!/^\d{4,17}$/.test(s.account??''))add('account','accountInvalid');
     if(s.account!==s.accountConfirm)add('accountConfirm','matchInvalid');
   } else {
-    if(total(s)>50000)add('payment','zelleLimit');
+    if(total(s)>50000&&!s.zelleOverride)add('payment','zelleLimit');
     if(!s.recipient?.trim())add('recipient','required');
     if(!zelle(s.zelle??''))add('zelle','zelleInvalid');
     if(!zelle(s.zelleConfirm??'')||zelle(s.zelle)!==zelle(s.zelleConfirm))add('zelleConfirm','matchInvalid');

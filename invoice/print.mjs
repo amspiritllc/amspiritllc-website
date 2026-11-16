@@ -35,7 +35,7 @@ export async function prepareInvoicePrint(state,lang,printout) {
  note.append(el('p',t('printResaleNote')));const totals=el('table','','print-totals');
  for(const [label,value,className]of [[t('subtotal'),total(state),''],[t('salesTax'),0,''],[t('totalDue'),total(state),'print-due']]){const row=el('tr','',className);row.append(el('td',label),el('td',money(value)));totals.append(row);}
  below.append(note,totals);add(below);
- const remit=el('section','','print-remit');remit.append(el('h2',`${t('remitPayment')} · ${state.payment==='ach'?'ACH':'Zelle'}`));
+ const remit=el('section','','print-remit');remit.append(el('h2',`${t('remitPayment')} · ${state.payment==='ach'?'ACH':'Zelle'+(state.zelleOverride&&total(state)>50000?' ('+t('zelleExceptionShort')+')':'')}`));
  const fields=state.payment==='ach'?[['holder',state.holder],['bank',state.bank],['routing',state.routing],['account',state.account]]:[['recipient',state.recipient],['zelle',zelle(state.zelle)]];
  for(const [key,value]of fields){const cell=el('div');cell.append(el('span',`${t(key)}: `),document.createTextNode(value));remit.append(cell);}
  const mismatch=payeeMismatch(state);if(mismatch)remit.append(el('p',`${t('printNameMismatch')}: ${mismatch}`,'print-name-warning'));add(remit);
