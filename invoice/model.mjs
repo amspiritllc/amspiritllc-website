@@ -8,8 +8,12 @@ export function cents(value) {
 }
 export const integer = value => /^\d{1,6}$/.test(String(value)) && Number(value)>=1;
 export const email = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+// Wire-only routing numbers: ACH payments sent to them are returned (owner 2026-11-17: a vendor gave BofA's wire number; we pay by ACH only).
+export const WIRE_ONLY = Object.freeze({'026009593':'Bank of America'});
+// ABA prefixes that can receive ACH: 00-12 (Fed districts/government), 21-32 (thrifts), 61-72 (electronic). 80 (traveler's checks) cannot.
+const achPrefix = value => {const p=Number(value.slice(0,2));return p<=12||(p>=21&&p<=32)||(p>=61&&p<=72);};
 export function routing(value) {
-  return /^\d{9}$/.test(value) && !/^0+$/.test(value) &&
+  return /^\d{9}$/.test(value) && !/^0+$/.test(value) && achPrefix(value) &&
     [0,1,2,3,4,5,6,7,8].reduce((sum,i)=>sum+Number(value[i])*[3,7,1][i%3],0)%10===0;
 }
 export function zelle(value) {
@@ -64,7 +68,7 @@ export function validate(s) {
   if(!Number.isSafeInteger(total(s))||total(s)<=0||total(s)>99999999999)add(s.statement?'statementTotal':'items','totalInvalid');
   if(s.payment==='ach') {
     ['holder','bank','routing','account','accountConfirm'].forEach(k=>{if(!s[k]?.trim())add(k,'required');});
-    if(!routing(s.routing??''))add('routing','routingInvalid');
+    if(!routing(s.routing??''))add('routing','routingInvalid');else if(WIRE_ONLY[s.routing])add('routing','routingWireOnly');
     if(!/^\d{4,17}$/.test(s.account??''))add('account','accountInvalid');
     if(s.account!==s.accountConfirm)add('accountConfirm','matchInvalid');
   } else {
