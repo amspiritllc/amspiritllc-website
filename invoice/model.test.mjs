@@ -43,5 +43,5 @@ test('ACH routing: wire-only and non-ACH prefixes are rejected (owner 2026-11-17
   assert.ok(routing('026009593'));assert.ok(/routingWireOnly/.test(JSON.stringify(validate({...valid(),routing:'026009593'}))));
   assert.ok(routing('111000025'));assert.ok(!/routing/.test(JSON.stringify(validate({...valid(),routing:'111000025'}))));
   assert.equal(routing('800000080'),false);
-  for(const lang of ['en','zh'])assert.ok(dictionaries[lang].routingWireOnly);
+  for(const lang of ['en','zh']){assert.ok(dictionaries[lang].routingWireOnly);assert.ok(dictionaries[lang].printRouting);}
 });
