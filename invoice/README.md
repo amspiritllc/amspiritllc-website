@@ -19,3 +19,5 @@ The print layout follows the approved vendor-letterhead mockup, with bilingual l
 ## Review gates
 
 Owner/CPA review is required before merging. Merging to the Pages source branch publishes the page. Review certification language and payment instructions before publication. Sample QA data must remain fictitious.
+
+Optional deduction (owner 2026-11-22): a checkbox reveals Deduction amount and Reason. The amount must be less than the subtotal; Total due = subtotal - deduction, and the Zelle $500 limit uses the net total. The PDF shows Subtotal, Less deduction and the reason.
