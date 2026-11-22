@@ -1,4 +1,4 @@
-import {CONFIG,cents,total,filename,zelle,payeeMismatch,formatPhone,formatDate} from './model.mjs';
+import {CONFIG,cents,total,subtotal,deduction,filename,zelle,payeeMismatch,formatPhone,formatDate} from './model.mjs';
 import {dictionaries} from './i18n.mjs';
 
 // Measured Letter pages, generated from memory only. All user values are text nodes.
@@ -32,8 +32,9 @@ export async function prepareInvoicePrint(state,lang,printout) {
  }
  const below=el('div','','print-below'),note=el('div','','print-note');
  if(!state.statement)note.append(el('p',`${state.items.length} ${t('lineItems')} · ${state.items.reduce((sum,item)=>sum+Number(item.qty),0)} ${t('units')}`,'print-counts'));
+ if(state.deduct)note.append(el('p',`${t('printDeductReason')}: ${state.deductReason.trim()}`,'print-deduct'));
  note.append(el('p',t('printResaleNote')));const totals=el('table','','print-totals');
- for(const [label,value,className]of [[t('subtotal'),total(state),''],[t('salesTax'),0,''],[t('totalDue'),total(state),'print-due']]){const row=el('tr','',className);row.append(el('td',label),el('td',money(value)));totals.append(row);}
+ for(const [label,value,className]of [[t('subtotal'),subtotal(state),''],...(state.deduct?[[t('lessDeduction'),-deduction(state),'print-less']]:[]),[t('salesTax'),0,''],[t('totalDue'),total(state),'print-due']]){const row=el('tr','',className);row.append(el('td',label),el('td',money(value)));totals.append(row);}
  below.append(note,totals);add(below);
  const remit=el('section','','print-remit');remit.append(el('h2',`${t('remitPayment')} · ${state.payment==='ach'?'ACH':'Zelle'+(state.zelleOverride&&total(state)>50000?' ('+t('zelleExceptionShort')+')':'')}`));
  const fields=state.payment==='ach'?[['holder',state.holder],['bank',state.bank],['printRouting',state.routing],['account',state.account]]:[['recipient',state.recipient],['zelle',zelle(state.zelle)]];

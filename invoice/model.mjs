@@ -35,10 +35,14 @@ export function invoiceNumber(name, date=today()) {
   const initials=name.trim().split(/\s+/).filter(Boolean).map(p=>Array.from(p)[0]).join('').slice(0,12)||'INV';
   return `${initials.toUpperCase()}-${date.replaceAll('-','')}-01`;
 }
-export function total(state) {
+// Gross merchandise amount before any deduction.
+export function subtotal(state) {
   if(state.statement) return cents(state.statementTotal)??0;
   return state.items.reduce((sum,row)=>sum+(integer(row.qty)?Number(row.qty):0)*(cents(row.price)??0),0);
 }
+// Owner 11-22: optional deduction — the vendor credits AMSpirit for items missing or damaged on an earlier invoice.
+export function deduction(state) {return state.deduct?(cents(state.deductAmount??'')??0):0;}
+export function total(state) {return subtotal(state)-deduction(state);}
 export function validate(s) {
   const errors=[]; const add=(field,key)=>errors.push({field,key});
   const required=['legalName','street','cityStateZip','phone','email','invoiceNo','invoiceDate'];
@@ -64,6 +68,12 @@ export function validate(s) {
       if(!integer(r.qty))add(`item-${i}-qty`,'quantityInvalid');
       if(!cents(r.price))add(`item-${i}-price`,'moneyInvalid');
     });
+  }
+  if(s.deduct) {
+    if(!cents(s.deductAmount??''))add('deductAmount','moneyInvalid');
+    else if(deduction(s)>=subtotal(s))add('deductAmount','deductTooLarge');
+    const reason=String(s.deductReason??'').trim();
+    if(!reason)add('deductReason','required');else if(reason.length>200)add('deductReason','deductReasonLong');
   }
   if(!Number.isSafeInteger(total(s))||total(s)<=0||total(s)>99999999999)add(s.statement?'statementTotal':'items','totalInvalid');
   if(s.payment==='ach') {
