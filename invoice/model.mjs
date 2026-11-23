@@ -49,6 +49,8 @@ export function validate(s) {
   if(s.vendorType==='business') required.push('contact');
   if(!['individual','business'].includes(s.vendorType)) add('vendorType','required');
   if(!['ach','zelle'].includes(s.payment)) add('payment','required');
+  // Owner 2026-11-23: vendor must say whether the receiving account is personal or business; no default.
+  if(!['personal','business'].includes(s.accountType)) add('accountType','required');
   required.forEach(k=>{if(!String(s[k]??'').trim())add(k,'required');});
   if(s.email&&!email(s.email))add('email','emailInvalid');
   if(s.phone && !/^[+\d ()-]{7,30}$/.test(s.phone))add('phone','phoneInvalid');

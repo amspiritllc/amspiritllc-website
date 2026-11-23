@@ -21,3 +21,5 @@ The print layout follows the approved vendor-letterhead mockup, with bilingual l
 Owner/CPA review is required before merging. Merging to the Pages source branch publishes the page. Review certification language and payment instructions before publication. Sample QA data must remain fictitious.
 
 Optional deduction (owner 2026-11-22): a checkbox reveals Deduction amount and Reason. The amount must be less than the subtotal; Total due = subtotal - deduction, and the Zelle $1,000 limit (owner 2026-11-22; was $500) uses the net total. The PDF shows Subtotal, Less deduction and the reason.
+
+Payment account type (owner 2026-11-23): the vendor must choose Personal account or Business account for the receiving account (ACH or Zelle). There is no default; download is blocked until one is chosen. The PDF prints it in the Remit payment block.
