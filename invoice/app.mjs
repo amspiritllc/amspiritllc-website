@@ -5,7 +5,7 @@ let lang='en', dirty=false, manualNumber=false, showErrors=false;
 // Fields the vendor has left; their format errors show right away instead of only after Download.
 const touched=new Set(),digitsOnly=new Set(['routing','account','accountConfirm']);
 const blank=()=>({vendorType:'individual',legalName:'',businessName:'',contact:'',ein:'',street:'',cityStateZip:'',phone:'',email:'',invoiceNo:invoiceNumber(''),invoiceDate:today(),statement:false,statementDescription:dictionaries[lang].statementDefault,statementTotal:'',from:'',to:'',statementCount:'',deduct:false,deductAmount:'',deductReason:'',items:[{description:'',upc:'',qty:'',price:''}],payment:'ach',accountType:'',holder:'',bank:'',routing:'',account:'',accountConfirm:'',recipient:'',zelle:'',zelleConfirm:'',certified:false});
-// Owner 11-16: hidden Zelle-over-$1,000 exception for approved vendors: open the page with #zelle-ok,
+// Owner 11-16: hidden Zelle-over-$500 exception for approved vendors: open the page with #zelle-ok,
 // or press Ctrl+Alt+Z. The PDF then marks the payment as an approved exception.
 const zelleOk=()=>location.hash==='#zelle-ok';
 let state=blank();state.zelleOverride=zelleOk();
@@ -68,7 +68,7 @@ function renderPayment(){const fields=document.getElementById('payment-fields');
 function update(){
  const n=total(state);document.getElementById('total').textContent=money(n);const sub=document.getElementById('subtotal');if(sub)sub.textContent=money(subtotal(state));const less=document.getElementById('deduction-amount');if(less)less.textContent='−'+money(deduction(state));state.items.forEach((r,i)=>{const a=document.getElementById(`amount-${i}`);if(a)a.textContent=money((integer(r.qty)?Number(r.qty):0)*(cents(r.price)??0));});
  const count=document.getElementById('counts');if(count)count.textContent=`${state.items.length} ${t('rows')} · ${state.items.reduce((s,r)=>s+(integer(r.qty)?Number(r.qty):0),0)} ${t('units')}`;
- const over=n>100000&&!state.zelleOverride,z=document.getElementById('payment-zelle');z.disabled=over;document.getElementById('zelle-limit').textContent=t(over?'zelleLimit':n>100000?'zelleException':'zelleWithin');
+ const over=n>50000&&!state.zelleOverride,z=document.getElementById('payment-zelle');z.disabled=over;document.getElementById('zelle-limit').textContent=t(over?'zelleLimit':n>50000?'zelleException':'zelleWithin');
  if(over&&state.payment==='zelle'){state.payment='ach';document.getElementById('payment-ach').checked=true;z.checked=false;renderPayment();}
  const warning=document.getElementById('name-warning');warning.hidden=!payeeMismatch(state);warning.textContent=t('nameMismatch');
  const errors=validate(state);document.getElementById('download').setAttribute('aria-disabled',errors.length>0);
